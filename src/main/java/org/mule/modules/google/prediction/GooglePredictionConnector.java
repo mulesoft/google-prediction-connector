@@ -17,6 +17,7 @@ import org.mule.api.annotations.Connector;
 import org.mule.api.annotations.Processor;
 import org.mule.api.annotations.oauth.OAuth2;
 import org.mule.api.annotations.oauth.OAuthAccessToken;
+import org.mule.api.annotations.oauth.OAuthAccessTokenIdentifier;
 import org.mule.api.annotations.oauth.OAuthAuthorizationParameter;
 import org.mule.api.annotations.oauth.OAuthConsumerKey;
 import org.mule.api.annotations.oauth.OAuthConsumerSecret;
@@ -29,7 +30,7 @@ import org.mule.api.annotations.param.Optional;
 import org.mule.modules.google.AbstractGoogleOAuthConnector;
 import org.mule.modules.google.AccessType;
 import org.mule.modules.google.ForcePrompt;
-import org.mule.modules.google.GoogleUserIdExtractor;
+import org.mule.modules.google.IdentifierPolicy;
 import org.mule.modules.google.oauth.invalidation.InvalidationAwareCredential;
 import org.mule.modules.google.oauth.invalidation.OAuthTokenExpiredException;
 import org.mule.modules.google.prediction.model.Analyze;
@@ -90,6 +91,19 @@ public class GooglePredictionConnector extends AbstractGoogleOAuthConnector {
     private String scope;
     
     /**
+     * This policy represents which id we want to use to represent each google account.
+     * 
+     * PROFILE means that we want the google profile id. That means, the user's primary key in google's DB.
+     * This is a long number represented as a string.
+     * 
+     * EMAIL means you want to use the account's email address
+     */
+    @Configurable
+    @Optional
+    @Default("EMAIL")
+    private IdentifierPolicy identifierPolicy = IdentifierPolicy.EMAIL;
+
+    /**
      * Application name registered on Google API console
      */
     @Configurable
@@ -105,6 +119,11 @@ public class GooglePredictionConnector extends AbstractGoogleOAuthConnector {
      */
     private Prediction client;
     
+    @OAuthAccessTokenIdentifier
+	public String getAccessTokenId() {
+		return this.identifierPolicy.getId(this);
+	}
+	
 	@OAuthPostAuthorization
 	public void postAuth() {
 		Credential credential = new InvalidationAwareCredential(BearerToken.authorizationHeaderAccessMethod());
@@ -113,8 +132,6 @@ public class GooglePredictionConnector extends AbstractGoogleOAuthConnector {
 		this.client = new Prediction.Builder(new NetHttpTransport(), new JacksonFactory(), credential)
 					    	.setApplicationName(this.applicationName)
 					    	.build();
-		
-		GoogleUserIdExtractor.fetchAndPublishAsFlowVar(this);
 	}
 
     public String getConsumerKey() {
@@ -354,4 +371,13 @@ public class GooglePredictionConnector extends AbstractGoogleOAuthConnector {
     public void setClient(Prediction prediction){
         this.client = prediction;
     }
+
+	public IdentifierPolicy getIdentifierPolicy() {
+		return identifierPolicy;
+	}
+
+	public void setIdentifierPolicy(IdentifierPolicy identifierPolicy) {
+		this.identifierPolicy = identifierPolicy;
+	}
+    
 }
