@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:spring="http://www.springframework.org/schema/beans"
+      xmlns:google-prediction="http://www.mulesoft.org/schema/mule/google-prediction"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:script="http://www.mulesoft.org/schema/mule/scripting"
+      xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+      http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+      http://www.mulesoft.org/schema/mule/google-prediction http://www.mulesoft.org/schema/mule/google-prediction/1.0/mule-google-prediction.xsd
+      http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/3.3/mule-http.xsd
+      http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/3.3/mule-scripting.xsd">
+
+
+    <spring:beans>
+        <spring:bean id="objectStore" class="org.mule.util.store.SimpleMemoryObjectStore"/>
+    </spring:beans>
+    <google-prediction:config-with-oauth consumerKey="consumerKey" consumerSecret="consumerSecret"
+                                         applicationName="SampleApp">
+
+        <google-prediction:oauth-callback-config domain="localhost" path="google-prediction-oauth2-callback"/>
+        <google-prediction:oauth-store-config objectStore-ref="objectStore"/>
+        <!--  Not supported since ver 3.3.1 of the devkit
+        <google-prediction:oauth-restore-access-token>
+            <message-properties-transformer scope="invocation">                       
+                <add-message-property key="OAuthAccessToken" value="444"/>
+            </message-properties-transformer>
+        </google-prediction:oauth-restore-access-token>
+        -->
+    </google-prediction:config-with-oauth>
+
+
+    <http:connector name="connector.http.mule.default"/>
+
+
+    <flow name="create">
+
+        <google-prediction:create modelId="temp" googleStorageLocation="muletest/language_id.txt"
+                                  accessTokenId="tokenId"/>
+        <expression-transformer expression="#[payload.getId()]"/>
+    </flow>
+
+    <flow name="update">
+        <google-prediction:update modelId="temp" label="English" accessTokenId="${accesstoken}">
+            <google-prediction:csv>
+                <google-prediction:csv value-ref="#['This is a string in english.']"/>
+            </google-prediction:csv>
+
+        </google-prediction:update>
+        <expression-transformer expression="#[payload.getId()]"/>
+    </flow>
+    <flow name="list">
+        <google-prediction:list accessTokenId="#[flowVars['tokenId']]"/>
+        <choice>
+            <when expression="#[(payload.size() > 0)]">
+                <expression-transformer expression="#[true]"/>
+            </when>
+            <otherwise>
+                <expression-transformer expression="#[false]"/>
+            </otherwise>
+        </choice>
+    </flow>
+
+    <flow name="training">
+        <google-prediction:training-complete modelId="temp"/>
+        <logger message="Is training complete? #[payload]" level="ERROR"/>
+    </flow>
+
+    <flow name="analyze">
+        <google-prediction:analyze modelId="temp"/>
+        <expression-transformer expression="#[payload.getId()]"/>
+    </flow>
+
+    <flow name="predict">
+        <google-prediction:predict modelId="temp">
+            <google-prediction:list>
+                <google-prediction:list value-ref="#['this is a sample string']"/>
+            </google-prediction:list>
+        </google-prediction:predict>
+        <expression-transformer expression="#[payload.getOutputLabel()]"/>
+        <logger message="Output label = #[payload]" level="ERROR"/>
+    </flow>
+
+
+    <flow name="delete">
+        <google-prediction:delete modelId="temp"/>
+        <logger message="#[payload.getClass()]" level="ERROR"/>
+        <choice>
+            <when expression="#[payload instanceof org.mule.transport.NullPayload]">
+                <expression-transformer expression="#[true]"/>
+            </when>
+            <otherwise>
+                <expression-transformer expression="#[false]"/>
+            </otherwise>
+        </choice>
+    </flow>
+
+    <flow name="check.xml">
+        <logger level="INFO" message="Config is ok."/>
+        <expression-transformer expression="#[true]"/>
+    </flow>
+
+
+</mule>

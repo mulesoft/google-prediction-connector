@@ -1,0 +1,30 @@
+<!-- BEGIN_INCLUDE(google-prediction:predict) -->
+    <google-prediction:predict config-ref="Googleprediction" modelId="modelName">
+        <google-prediction:list ref="#[payload]"/>
+    </google-prediction:predict>
+<!-- END_INCLUDE(google-prediction:predict) -->
+<!-- BEGIN_INCLUDE(google-prediction:analyze) -->
+    <google-prediction:analyze config-ref="Googleprediction" modelId="modelId"/>
+<!-- END_INCLUDE(google-prediction:analyze) -->
+<!-- BEGIN_INCLUDE(google-prediction:get) -->
+    <google-prediction:get config-ref="Googleprediction" modelId="modelId"/>
+<!-- END_INCLUDE(google-prediction:get) -->
+<!-- BEGIN_INCLUDE(google-prediction:create) -->
+    <google-prediction:create config-ref="Googleprediction" googleStorageLocation="your/path/to/google/cloudstorage" modelId="modelId" storagePMMLLocation="optionalPMM" storagePMMLModelLocation="optionalPMMModel"/>
+<!-- END_INCLUDE(google-prediction:create) -->
+<!-- BEGIN_INCLUDE(google-prediction:delete) -->
+    <google-prediction:delete config-ref="Googleprediction" modelId="modelId"/>
+<!-- END_INCLUDE(google-prediction:delete) -->
+<!-- BEGIN_INCLUDE(google-prediction:list) -->
+    <google-prediction:list config-ref="Googleprediction"/>
+<!-- END_INCLUDE(google-prediction:list) -->
+<!-- BEGIN_INCLUDE(google-prediction:training-complete) -->
+    <google-prediction:training-complete config-ref="Googleprediction" modelId="modelId"/>
+<!-- END_INCLUDE(google-prediction:training-complete) -->
+<!-- BEGIN_INCLUDE(google-prediction:update) -->
+    <google-prediction:update config-ref="Googleprediction" label="SampleLabel" modelId="modelId">
+        <google-prediction:csv ref="#[payload]"/>
+    </google-prediction:update>
+<!-- END_INCLUDE(google-prediction:update) -->
+
+
